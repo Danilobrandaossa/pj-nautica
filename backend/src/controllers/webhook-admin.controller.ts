@@ -37,7 +37,12 @@ export class WebhookAdminController {
       const where: any = {};
       if (tenantId) {
         const wh = await prisma.webhook.findFirst({ where: { tenantId } });
-        if (wh) where.webhookId = wh.id; else return res.json({ items: [] });
+        if (wh) {
+          where.webhookId = wh.id;
+        } else {
+          res.json({ items: [] });
+          return;
+        }
       }
       if (eventType) where.eventType = eventType;
       if (from || to) where.createdAt = { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined };
