@@ -97,16 +97,16 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Em produção, permitir requisições sem origin apenas para healthchecks/crawlers
-    // Isso permite que healthchecks do Docker/Kubernetes funcionem corretamente
-    if (config.nodeEnv === 'production' && !origin) {
-      return callback(new Error('Origin é obrigatório em produção'));
+    // Em produção, permitir requisições sem origin (pode ser same-origin request)
+    // Ou requisições válidas vindas de navegadores que não enviam Origin
+    if (!origin) {
+      return callback(null, true);
     }
     
     // Use apenas origens estáticas para evitar consultas assíncronas ao banco
     const allowedOrigins = new Set(staticAllowedOrigins);
 
-    if (origin && allowedOrigins.has(origin)) {
+    if (allowedOrigins.has(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido pelo CORS'));
