@@ -1,0 +1,29 @@
+Execute estes comandos NO SERVIDOR agora:
+
+======================================================
+
+cd /opt/embarcacoes
+
+git pull origin main
+
+echo "=== Verificar Admin ==="
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT id, email, name, role FROM users WHERE role = 'ADMIN' AND \"deletedAt\" IS NULL;"
+
+echo ""
+echo "=== Contagem de Dados ==="
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT 'Usuários' as item, COUNT(*)::text FROM users WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Embarcações', COUNT(*)::text FROM vessels WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Reservas', COUNT(*)::text FROM bookings WHERE \"deletedAt\" IS NULL;"
+
+echo ""
+echo "=== Verificar Reservas Recentes ==="
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT TO_CHAR(b.\"bookingDate\", 'DD/MM/YYYY') as data, b.status, u.email FROM bookings b JOIN users u ON b.\"userId\" = u.id WHERE b.\"deletedAt\" IS NULL ORDER BY b.\"bookingDate\" DESC LIMIT 10;"
+
+echo ""
+echo "=== Verificar Migrations ==="
+docker exec embarcacoes_backend_prod npx prisma migrate status
+
+echo ""
+echo "=== Verificar Erros ==="
+docker logs embarcacoes_backend_prod --tail=100 | grep -i error || echo "✅ Nenhum erro"
+
+======================================================
+
