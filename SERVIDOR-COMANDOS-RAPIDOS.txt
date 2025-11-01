@@ -1,0 +1,163 @@
+═══════════════════════════════════════════════════════════════════════════════
+COMANDOS PARA EXECUTAR NO SERVIDOR - COPIE E COLE BLOCO POR BLOCO
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANTE: Execute os comandos na ordem, um bloco por vez!
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 1: Atualizar sistema e instalar Docker
+───────────────────────────────────────────────────────────────────────────────
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install docker.io docker-compose git -y
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo timedatectl set-timezone America/Sao_Paulo
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 2: Preparar diretório
+───────────────────────────────────────────────────────────────────────────────
+
+cd /opt
+mv embarcacoes embarcacoes.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+mkdir -p embarcacoes && cd embarcacoes
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 3: Clonar repositório
+───────────────────────────────────────────────────────────────────────────────
+
+git clone https://github.com/Danilobrandaossa/pj-nautica.git .
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 4: Configurar .env
+───────────────────────────────────────────────────────────────────────────────
+
+cp backend/ENV.EXAMPLE .env
+nano .env
+
+# Configure as variáveis conforme DEPLOY-INFINITY-NAUTICA.md
+# Valores com caracteres especiais devem estar entre aspas simples!
+# Salve: Ctrl+X, Y, Enter
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 5: Criar diretórios
+───────────────────────────────────────────────────────────────────────────────
+
+mkdir -p nginx/ssl certbot/conf certbot/www
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 6: Verificar Docker
+───────────────────────────────────────────────────────────────────────────────
+
+docker --version
+docker compose version
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 7: Deploy - Build
+───────────────────────────────────────────────────────────────────────────────
+
+docker compose -f docker-compose.prod.yml build --no-cache
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 8: Deploy - Subir containers (sem nginx primeiro)
+───────────────────────────────────────────────────────────────────────────────
+
+docker compose -f docker-compose.prod.yml up -d postgres backend frontend
+sleep 30
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 9: Migrações
+───────────────────────────────────────────────────────────────────────────────
+
+docker compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate || true
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 10: Verificar containers
+───────────────────────────────────────────────────────────────────────────────
+
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs --tail=30
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 11: Testar backend
+───────────────────────────────────────────────────────────────────────────────
+
+curl http://localhost:3001/health
+curl http://localhost:3000
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 12: Configurar SSL (Certbot no host)
+───────────────────────────────────────────────────────────────────────────────
+
+# IMPORTANTE: Pare o container nginx primeiro
+docker compose -f docker-compose.prod.yml stop nginx
+
+# Instalar certbot no host
+sudo apt install certbot -y
+
+# Parar nginx do sistema se existir
+sudo systemctl stop nginx 2>/dev/null || true
+sudo systemctl disable nginx 2>/dev/null || true
+
+# Gerar certificado
+sudo certbot certonly --standalone -d app.infinitynautica.com.br
+
+# Se você tem n8n configurado:
+# sudo certbot certonly --standalone -d n8n.infinitynautica.com.br
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 13: Copiar certificados para Docker
+───────────────────────────────────────────────────────────────────────────────
+
+sudo cp -r /etc/letsencrypt certbot/conf/
+sudo chmod -R 755 certbot/conf
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 14: Iniciar Nginx
+───────────────────────────────────────────────────────────────────────────────
+
+docker compose -f docker-compose.prod.yml up -d nginx
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 15: Testar tudo
+───────────────────────────────────────────────────────────────────────────────
+
+# Status
+docker compose -f docker-compose.prod.yml ps
+
+# Logs do nginx
+docker compose -f docker-compose.prod.yml logs nginx
+
+# Testar acesso local
+curl http://localhost
+curl http://localhost/api/health
+
+# Testar acesso pelo domínio (se DNS já propagou)
+curl http://app.infinitynautica.com.br
+curl https://app.infinitynautica.com.br
+
+───────────────────────────────────────────────────────────────────────────────
+COMANDOS ÚTEIS
+───────────────────────────────────────────────────────────────────────────────
+
+# Ver logs
+docker compose -f docker-compose.prod.yml logs -f
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f nginx
+
+# Reiniciar serviços
+docker compose -f docker-compose.prod.yml restart backend
+docker compose -f docker-compose.prod.yml restart nginx
+
+# Parar tudo
+docker compose -f docker-compose.prod.yml down
+
+# Verificar portas
+sudo netstat -tuln | grep -E "3000|3001|80|443"
+
+───────────────────────────────────────────────────────────────────────────────
+
