@@ -68,7 +68,7 @@ app.use('/api/pwa', (req, res, next) => {
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
-  next();
+  return next();
 });
 
 // CORS para outras rotas (com validação de origin)
