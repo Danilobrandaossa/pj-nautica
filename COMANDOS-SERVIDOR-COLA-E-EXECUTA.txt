@@ -1,0 +1,106 @@
+# ================================================================
+# COMANDOS PARA COPIAR E COLAR NO SERVIDOR
+# ================================================================
+# Execute estes comandos SEQUENCIALMENTE no servidor
+# ================================================================
+
+# ================================================================
+# PASSO 1: ENTRAR NO DIRETÓRIO
+# ================================================================
+cd /opt/embarcacoes
+
+# ================================================================
+# PASSO 2: BACKUP
+# ================================================================
+mkdir -p backups
+docker exec embarcacoes_db_prod pg_dump -U embarcacoes embarcacoes_db > backups/backup_$(date +%Y%m%d_%H%M%S).sql
+echo "✅ Backup criado!"
+
+# ================================================================
+# PASSO 3: PULL DO CÓDIGO
+# ================================================================
+git pull origin main
+
+# ================================================================
+# PASSO 4: VERIFICAR CERTIFICADOS SSL
+# ================================================================
+docker exec embarcacoes_certbot certbot certificates
+
+# SE MOSTRAR "No certificates found" ou estiver expirado, executar:
+# docker exec embarcacoes_certbot certbot certonly --webroot --webroot-path=/var/www/certbot --email danilo@danilobrandao.com.br --agree-tos --no-eff-email -d app.infinitynautica.com.br
+
+# ================================================================
+# PASSO 5: ATIVAR SSL NO NGINX
+# ================================================================
+# Primeiro, fazer backup do nginx.conf atual
+cp nginx/nginx.conf nginx/nginx.conf.backup
+
+# Se certificados existirem, ativar SSL
+if [ -d "certbot/conf/live/app.infinitynautica.com.br" ]; then
+    echo "Certificados encontrados! Ativando SSL..."
+    cp nginx/nginx.conf.ssl nginx/nginx.conf
+    echo "✅ SSL ativado!"
+else
+    echo "⚠️  Certificados não encontrados. SSL não será ativado."
+fi
+
+# ================================================================
+# PASSO 6: REBUILD E RESTART
+# ================================================================
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
+
+# ================================================================
+# PASSO 7: AGUARDAR INICIALIZAÇÃO
+# ================================================================
+sleep 20
+
+# ================================================================
+# PASSO 8: VERIFICAÇÃO FINAL
+# ================================================================
+echo "=== Verificando status ==="
+docker ps --format "table {{.Names}}\t{{.Status}}" | grep embarcacoes
+
+echo ""
+echo "=== Verificando migrations ==="
+docker exec embarcacoes_backend_prod npx prisma migrate status
+
+echo ""
+echo "=== Verificando Admin ==="
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT email, name, role FROM users WHERE role = 'ADMIN' AND \"deletedAt\" IS NULL;"
+
+echo ""
+echo "=== Verificando Contagens ==="
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT 'Usuários' as item, COUNT(*)::text FROM users WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Embarcações', COUNT(*)::text FROM vessels WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Reservas', COUNT(*)::text FROM bookings WHERE \"deletedAt\" IS NULL;"
+
+echo ""
+echo "=== Testando Health Check ==="
+curl -f http://localhost:3001/health && echo " ✅ Backend OK"
+curl -f https://app.infinitynautica.com.br/api/health && echo " ✅ API OK"
+
+echo ""
+echo "=== Verificando erros nos logs ==="
+docker logs embarcacoes_backend_prod --tail=100 | grep -i error || echo "✅ Nenhum erro encontrado"
+
+# ================================================================
+# SCRIPT COMPLETO ALTERNATIVO (COPIE TUDO DE UMA VEZ)
+# ================================================================
+#
+# cd /opt/embarcacoes && \
+# mkdir -p backups && \
+# docker exec embarcacoes_db_prod pg_dump -U embarcacoes embarcacoes_db > backups/backup_$(date +%Y%m%d_%H%M%S).sql && \
+# git pull origin main && \
+# cp nginx/nginx.conf nginx/nginx.conf.backup && \
+# [ -d "certbot/conf/live/app.infinitynautica.com.br" ] && cp nginx/nginx.conf.ssl nginx/nginx.conf || echo "Certificados não encontrados" && \
+# docker compose -f docker-compose.prod.yml down && \
+# docker compose -f docker-compose.prod.yml build --no-cache && \
+# docker compose -f docker-compose.prod.yml up -d && \
+# sleep 20 && \
+# docker ps | grep embarcacoes && \
+# docker exec embarcacoes_backend_prod npx prisma migrate status && \
+# curl -f http://localhost:3001/health && echo " ✅ Backend OK" && \
+# echo "✅ Processo concluído!"
+#
+# ================================================================
+
