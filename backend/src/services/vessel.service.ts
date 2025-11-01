@@ -126,7 +126,12 @@ export class VesselService {
 
   async findByUser(userId: string) {
     const userVessels = await prisma.userVessel.findMany({
-      where: { userId },
+      where: { 
+        userId,
+        vessel: {
+          deletedAt: null, // Excluir embarcações deletadas
+        },
+      },
       include: {
         vessel: {
           include: {
