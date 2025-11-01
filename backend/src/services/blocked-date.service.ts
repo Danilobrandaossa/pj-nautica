@@ -2,7 +2,7 @@ import { prisma } from '../utils/prisma';
 import { AppError } from '../middleware/error-handler';
 import { BlockedDateReason } from '@prisma/client';
 import { startOfDay } from 'date-fns';
-import { cache, cacheKey } from '../utils/cache';
+import { cache } from '../utils/cache';
 
 export class BlockedDateService {
   async create(

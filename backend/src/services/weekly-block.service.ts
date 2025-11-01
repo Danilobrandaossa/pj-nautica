@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../middleware/error-handler';
-import { cache, cacheKey } from '../utils/cache';
+import { cache } from '../utils/cache';
 
 const prisma = new PrismaClient();
 

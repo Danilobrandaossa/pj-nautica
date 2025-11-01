@@ -55,7 +55,6 @@ export class SettingsService {
     if (input.key.startsWith('booking.') || input.key.startsWith('scheduling.')) {
       // Invalidar todos os caches de calendário (conservative approach)
       // Isso garante que todas as embarcações vejam as mudanças imediatamente
-      const allCacheKeys = ['calendar'];
       // Como não temos acesso direto a todas as keys, vamos apenas reduzir o TTL
       // na próxima chamada o cache será atualizado
     }

@@ -20,7 +20,6 @@ export interface PaymentGatewayAdapter {
 }
 
 export class MercadoPagoAdapter implements PaymentGatewayAdapter {
-  constructor(private accessToken: string) {}
   async createCharge(_input: ChargeRequest): Promise<ChargeResponse> {
     // TODO: implement real API calls; placeholder for now
     return { invoiceId: `INV-${Date.now()}` };

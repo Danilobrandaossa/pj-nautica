@@ -43,6 +43,7 @@ export class WebhookAdminController {
       if (from || to) where.createdAt = { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined };
       const items = await prisma.webhookLog.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 });
       res.json({ items });
+      return;
     } catch (error) { next(error); }
   }
 

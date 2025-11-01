@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../utils/prisma';
 import { verifyHmacSHA256 } from '../utils/hmac';
 import { AppError } from '../middleware/error-handler';
-import { notificationLogService } from '../services/notification-log.service';
 
 export class UnifiedWebhookController {
   private async verify(req: Request) {
@@ -30,7 +29,7 @@ export class UnifiedWebhookController {
       // Basic normalization
       switch (event) {
         case 'payment_status_update': {
-          const { invoice_id, status, user_id, amount, due_date } = req.body as any;
+          const { invoice_id, status, due_date } = req.body as any;
           await prisma.installment.updateMany({
             where: { id: invoice_id },
             data: { status: status?.toUpperCase?.() || 'PENDING', dueDate: due_date ? new Date(due_date) : undefined },

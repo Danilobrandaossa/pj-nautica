@@ -7,7 +7,7 @@ const router = Router();
  * GET /api/pwa/manifest.json
  * Retorna o manifest.json dinâmico baseado nas configurações do sistema
  */
-router.get('/manifest.json', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/manifest.json', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     // Buscar configurações PWA do banco
     const pwaName = await settingsService.get<string>('pwa.name', 'Sistema Embarcações');
@@ -127,7 +127,7 @@ router.get('/manifest.json', async (req: Request, res: Response, next: NextFunct
  * GET /api/pwa/icon
  * Retorna o ícone do PWA em base64 (se configurado)
  */
-router.get('/icon', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/icon', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const iconBase64 = await settingsService.get<string>('pwa.iconBase64', '');
     
@@ -151,7 +151,7 @@ router.get('/icon', async (req: Request, res: Response, next: NextFunction) => {
  * GET /api/pwa/service-worker.js
  * Retorna o service worker dinâmico baseado nas configurações
  */
-router.get('/service-worker.js', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/service-worker.js', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const offlineEnabled = await settingsService.get<boolean>('pwa.offlineEnabled', true);
     const autoUpdate = await settingsService.get<boolean>('pwa.autoUpdate', true);
@@ -330,20 +330,20 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Auto-update check
-${AUTO_UPDATE ? `
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
-// Check for updates every hour
-setInterval(() => {
-  self.registration.update().catch(() => {
-    // Silently fail
+if (AUTO_UPDATE) {
+  self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
   });
-}, 3600000);
-` : ''}
+
+  // Check for updates every hour
+  setInterval(() => {
+    self.registration.update().catch(() => {
+      // Silently fail
+    });
+  }, 3600000);
+}
 
 // Handle offline actions
 async function handleOfflineActions() {
