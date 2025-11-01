@@ -152,15 +152,15 @@ export const validateOrigin = (
     }
 
     // Verificar se origin corresponde ao frontend
-    if (origin && !config.frontendUrl.includes(origin.replace(/https?:\/\//, '').split(':')[0])) {
+    if (origin) {
       // Em produção, validar exatamente
       if (config.nodeEnv === 'production') {
-        const allowedOrigins = [
-          config.frontendUrl,
-          `https://${config.frontendUrl}`,
-          `http://${config.frontendUrl}`,
-        ];
-        if (!allowedOrigins.includes(origin)) {
+        // Normalizar URLs para comparação (remover protocolos)
+        const normalizeUrl = (url: string) => url.replace(/^https?:\/\//, '').toLowerCase();
+        const normalizedOrigin = normalizeUrl(origin);
+        const normalizedFrontendUrl = normalizeUrl(config.frontendUrl);
+        
+        if (normalizedOrigin !== normalizedFrontendUrl) {
           throw new AppError(403, 'Origin não permitido');
         }
       }
