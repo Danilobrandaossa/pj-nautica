@@ -70,13 +70,18 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: async (origin, callback) => {
+  origin: async (origin, callback, req) => {
+    // Permitir rotas PWA públicas sem origin
+    if (!origin && req && req.url && req.url.startsWith('/api/pwa/')) {
+      return callback(null, true);
+    }
+    
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
     if (config.nodeEnv === 'development' && !origin) {
       return callback(null, true);
     }
     
-    // Em produção, sempre exigir origin
+    // Em produção, sempre exigir origin (exceto rotas PWA já tratadas acima)
     if (!origin) {
       return callback(new Error('Origin é obrigatório em produção'));
     }
