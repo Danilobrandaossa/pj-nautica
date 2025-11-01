@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Edit2, Trash2, Shield, Ship, Search, X } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Shield, Ship, Search, X, Key } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -141,6 +141,27 @@ export default function UsersPage() {
       toast.success('Usuário excluído!');
     },
   });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) => 
+      api.post(`/users/${userId}/reset-password`, { newPassword }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Senha redefinida com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || 'Erro ao redefinir senha');
+    },
+  });
+
+  const handleResetPassword = (user: any) => {
+    const newPassword = prompt(`Redefinir senha para ${user.name}:\n\nInforme a nova senha (mínimo 6 caracteres):`);
+    if (newPassword && newPassword.length >= 6) {
+      resetPasswordMutation.mutate({ userId: user.id, newPassword });
+    } else if (newPassword) {
+      toast.error('Senha deve ter no mínimo 6 caracteres');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -450,6 +471,13 @@ export default function UsersPage() {
                     title="Gerenciar embarcações"
                   >
                     <Ship className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => handleResetPassword(user)} 
+                    className="btn btn-secondary text-xs px-3 py-1"
+                    title="Redefinir senha"
+                  >
+                    <Key className="w-3 h-3" />
                   </button>
                   <button onClick={() => { if(confirm('Excluir?')) deleteMutation.mutate(user.id); }} className="btn btn-danger text-xs px-3 py-1">
                     <Trash2 className="w-3 h-3" />
