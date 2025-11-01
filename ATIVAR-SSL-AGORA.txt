@@ -1,0 +1,45 @@
+Execute estes comandos NO SERVIDOR para ATIVAR SSL:
+
+======================================================
+ATIVAR SSL AGORA - COMANDOS EXATOS
+======================================================
+
+cd /opt/embarcacoes
+
+echo "=== PASSO 1: Gerar Certificado SSL ==="
+docker exec embarcacoes_certbot certbot certonly \
+  --webroot \
+  --webroot-path /var/www/certbot \
+  --email danilo@danilobrandao.com.br \
+  --agree-tos \
+  --no-eff-email \
+  -d app.infinitynautica.com.br
+
+echo ""
+echo "=== PASSO 2: Verificar Certificado ==="
+docker exec embarcacoes_certbot certbot certificates
+
+echo ""
+echo "=== PASSO 3: Backup e Ativar SSL no Nginx ==="
+cp nginx/nginx.conf nginx/nginx.conf.backup
+cp nginx/nginx.conf.ssl nginx/nginx.conf
+
+echo ""
+echo "=== PASSO 4: Rebuild Nginx ==="
+docker compose -f docker-compose.prod.yml up -d --build nginx
+
+echo ""
+sleep 5
+
+echo "=== PASSO 5: Verificar SSL ==="
+curl -I https://app.infinitynautica.com.br 2>&1 | head -5
+
+echo ""
+echo "=== PASSO 6: Verificar Redirect HTTP->HTTPS ==="
+curl -I http://app.infinitynautica.com.br 2>&1 | head -5
+
+echo ""
+echo "✅ SSL ATIVADO! Verifique no navegador: https://app.infinitynautica.com.br"
+
+======================================================
+
