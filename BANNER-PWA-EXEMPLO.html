@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exemplo Banner PWA - Sistema Embarcações</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .phone-mockup {
+            width: 375px;
+            height: 812px;
+            background: #000;
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .screen {
+            width: 100%;
+            height: 100%;
+            background: #f8fafc;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-content {
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 12px;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin: 5px 0 0 0;
+        }
+        
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .feature {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .feature-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 5px 0;
+        }
+        
+        .feature-desc {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* Banner PWA */
+        .pwa-banner {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .banner-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .banner-text {
+            flex: 1;
+        }
+        
+        .banner-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        
+        .banner-desc {
+            font-size: 12px;
+            color: #6b7280;
+            margin: 2px 0 0 0;
+        }
+        
+        .banner-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .install-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        
+        .install-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .dismiss-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .dismiss-btn:hover {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .demo-text {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-mockup">
+        <div class="demo-text">📱 Exemplo: Banner PWA no Mobile</div>
+        <div class="screen">
+            <div class="app-content">
+                <div class="header">
+                    <div class="logo">🚤</div>
+                    <h1 class="title">Sistema Embarcações</h1>
+                    <p class="subtitle">Agendamentos Inteligentes</p>
+                </div>
+                
+                <div class="content">
+                    <div class="feature">
+                        <div class="feature-icon">📅</div>
+                        <h3 class="feature-title">Agendamentos</h3>
+                        <p class="feature-desc">Gerencie suas reservas</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">💰</div>
+                        <h3 class="feature-title">Finanças</h3>
+                        <p class="feature-desc">Controle seus pagamentos</p>
+                    </div>
+                    
+                    <div class="feature">
+                        <div class="feature-icon">🔔</div>
+                        <h3 class="feature-title">Notificações</h3>
+                        <p class="feature-desc">Receba alertas importantes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Banner PWA -->
+            <div class="pwa-banner">
+                <div class="banner-content">
+                    <div class="banner-icon">📱</div>
+                    <div class="banner-text">
+                        <h3 class="banner-title">Instalar App</h3>
+                        <p class="banner-desc">Acesso rápido e notificações</p>
+                    </div>
+                    <div class="banner-actions">
+                        <button class="install-btn">
+                            <span>⬇️</span>
+                            <span>Instalar</span>
+                        </button>
+                        <button class="dismiss-btn">✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+

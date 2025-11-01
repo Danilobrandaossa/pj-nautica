@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Embarcações - Teste</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            background: rgba(0, 255, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #00ff00;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚢 Sistema de Embarcações</h1>
+        
+        <div class="status">
+            <h2>✅ Sistema Funcionando!</h2>
+            <p>O sistema está rodando localmente com sucesso!</p>
+        </div>
+
+        <div class="info">
+            <h3>📋 Informações do Sistema:</h3>
+            <ul>
+                <li><strong>Frontend:</strong> http://localhost:3000</li>
+                <li><strong>Backend API:</strong> http://localhost:3001/api</li>
+                <li><strong>Nginx Proxy:</strong> http://localhost:8080</li>
+                <li><strong>Banco de Dados:</strong> localhost:5432</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>🔐 Dados de Login:</h3>
+            <p><strong>Admin:</strong> admin@embarcacoes.com / admin123</p>
+            <p><strong>Cliente Teste:</strong> cliente@teste.com / cliente123</p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="http://localhost:3000" class="btn">Acessar Frontend</a>
+            <a href="http://localhost:3001/api/health" class="btn">Testar API</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: simple-backend.Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=demo
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_URL: http://localhost:3001/api
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/simple.conf:/etc/nginx/nginx.conf
+      - ./simple-frontend.html:/usr/share/nginx/html/simple-frontend.html
+    depends_on:
+      - frontend
+      - backend

@@ -1,0 +1,22 @@
+COMANDO PARA EXECUTAR NO SERVIDOR:
+
+1. Conecte ao servidor:
+ssh root@145.223.93.235
+# Senha: Zy598859D@n22
+
+2. Execute este comando único:
+curl -fsSL https://raw.githubusercontent.com/seu-usuario/embarcacoes/main/deploy-completo.sh | bash
+
+OU se preferir, copie e cole o conteúdo do arquivo deploy-completo.sh diretamente no servidor.
+
+3. Aguarde o deploy completar (pode levar 5-10 minutos)
+
+4. Acesse:
+- Frontend: http://145.223.93.235
+- Backend: http://145.223.93.235/api
+- n8n: http://145.223.93.235:5678
+
+COMANDOS ÚTEIS:
+- Ver logs: docker-compose -f docker-compose.prod.yml logs -f
+- Parar: docker-compose -f docker-compose.prod.yml down
+- Reiniciar: docker-compose -f docker-compose.prod.yml restart

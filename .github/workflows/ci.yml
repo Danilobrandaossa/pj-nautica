@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+
+jobs:
+  backend:
+    name: Backend - Lint, Test, Build
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: embarcacoes_test
+          MYSQL_USER: app
+          MYSQL_PASSWORD: app
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -proot"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma client
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+        run: npx prisma generate
+
+      - name: Run Prisma migrations (test db)
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+        run: npx prisma migrate deploy
+
+      - name: Lint (backend)
+        working-directory: backend
+        run: npm run lint || true
+        continue-on-error: true
+
+      - name: Test (backend)
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+          DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+          JWT_SECRET: ci-jwt
+          JWT_REFRESH_SECRET: ci-refresh
+          NODE_ENV: test
+        run: npm test -- --runInBand
+
+      - name: Build (backend)
+        working-directory: backend
+        run: npm run build
+
+      - name: Test Coverage (backend)
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+          DATABASE_URL: mysql://app:app@localhost:3306/embarcacoes_test
+          JWT_SECRET: ci-jwt
+          JWT_REFRESH_SECRET: ci-refresh
+          NODE_ENV: test
+        run: npm run test:coverage -- --runInBand
+
+      - name: Upload Coverage Reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
+  frontend:
+    name: Frontend - Build & E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (frontend)
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: E2E Tests (Playwright)
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: http://localhost:3000
+        run: npm run test:e2e
+
+

@@ -1,0 +1,128 @@
+name: 🚀 Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🔧 Add VPS to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: 🚀 Deploy to VPS
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -e
+            
+            echo "🚀 Iniciando deploy..."
+            
+            # Navegar para o diretório do projeto
+            cd /opt/embarcacoes || {
+              echo "❌ Diretório /opt/embarcacoes não existe. Criando..."
+              sudo mkdir -p /opt/embarcacoes
+              sudo chown -R $USER:$USER /opt/embarcacoes
+              cd /opt/embarcacoes
+            }
+            
+            # Clonar ou atualizar repositório
+            if [ -d ".git" ]; then
+              echo "📥 Atualizando código do GitHub..."
+              git fetch origin
+              git reset --hard origin/main || git reset --hard origin/master
+              git clean -fd
+            else
+              echo "📥 Clonando repositório..."
+              git clone https://github.com/${{ github.repository }}.git .
+            fi
+            
+            # Garantir que temos as permissões
+            sudo chown -R $USER:$USER /opt/embarcacoes
+            
+            # Verificar se .env existe
+            if [ ! -f ".env" ]; then
+              echo "⚠️  Arquivo .env não encontrado. Criando a partir do exemplo..."
+              if [ -f "env.production.example" ]; then
+                cp env.production.example .env
+                echo "📝 Configure as variáveis de ambiente no arquivo .env antes de continuar!"
+              else
+                echo "❌ Arquivo env.production.example não encontrado!"
+                exit 1
+              fi
+            fi
+            
+            # Criar diretórios necessários
+            mkdir -p nginx/ssl certbot/conf certbot/www
+            
+            # Executar script de deploy
+            if [ -f "deploy-server.sh" ]; then
+              chmod +x deploy-server.sh
+              ./deploy-server.sh
+            else
+              echo "🔨 Executando deploy manual..."
+              
+              # Parar containers existentes
+              docker-compose -f docker-compose.prod.yml down || true
+              
+              # Build e iniciar containers
+              echo "🏗️  Construindo containers..."
+              docker-compose -f docker-compose.prod.yml build --no-cache
+              
+              echo "🚀 Iniciando containers..."
+              docker-compose -f docker-compose.prod.yml up -d
+              
+              # Aguardar containers iniciarem
+              echo "⏳ Aguardando containers iniciarem..."
+              sleep 30
+              
+              # Executar migrações
+              echo "🗄️  Executando migrações do banco de dados..."
+              docker-compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate || true
+              
+              # Limpar containers órfãos
+              docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+              
+              echo "✅ Deploy concluído!"
+            fi
+            
+            # Verificar status dos containers
+            echo "📊 Status dos containers:"
+            docker-compose -f docker-compose.prod.yml ps
+            
+            # Mostrar últimas linhas dos logs
+            echo "📋 Últimas linhas dos logs:"
+            docker-compose -f docker-compose.prod.yml logs --tail=20
+          EOF
+
+      - name: ✅ Verificar Deploy
+        run: |
+          echo "🔍 Verificando se o servidor está respondendo..."
+          sleep 10
+          curl -f ${{ secrets.VPS_URL }}/api/health || echo "⚠️  Servidor ainda iniciando..."
+
+      - name: 📢 Notificar sucesso
+        if: success()
+        run: |
+          echo "✅ Deploy concluído com sucesso!"
+          echo "🌐 Sistema disponível em: ${{ secrets.VPS_URL }}"
+
+      - name: ❌ Notificar erro
+        if: failure()
+        run: |
+          echo "❌ Deploy falhou! Verifique os logs acima."
+
+

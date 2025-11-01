@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: embarcacoes_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: embarcacoes
+      POSTGRES_PASSWORD: embarcacoes_password
+      POSTGRES_DB: embarcacoes_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - embarcacoes_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: embarcacoes_backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://embarcacoes:embarcacoes_password@postgres:5432/embarcacoes_db
+      JWT_SECRET: seu-jwt-secret-super-seguro-altere-em-producao
+      JWT_REFRESH_SECRET: seu-refresh-secret-super-seguro-altere-em-producao
+      PORT: 3001
+      FRONTEND_URL: http://192.168.1.105:3000
+      N8N_WEBHOOK_URL: http://n8n:5678/webhook/agendamentos
+      N8N_WEBHOOK_TOKEN: seu-webhook-token
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - embarcacoes_network
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: embarcacoes_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: /api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - embarcacoes_network
+    command: npm run dev -- --host 0.0.0.0
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: embarcacoes_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: admin
+      N8N_BASIC_AUTH_PASSWORD: admin123
+      N8N_HOST: 0.0.0.0
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://n8n:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - embarcacoes_network
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+networks:
+  embarcacoes_network:
+    driver: bridge
+

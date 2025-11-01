@@ -1,0 +1,44 @@
+{
+  "name": "SaaS Incoming Example",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "saas-incoming",
+        "options": {
+          "responseCode": 200,
+          "responseData": "={{ {\"received\": true} }}"
+        }
+      },
+      "id": "Webhook_In",
+      "name": "Webhook In",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [260, 260]
+    },
+    {
+      "parameters": {
+        "functionCode": "const crypto = require('crypto');\n// Opcional: validar assinatura HMAC\n// const secret = 'COLOQUE_SEU_SEGREDO_AQUI';\n// const raw = JSON.stringify(items[0].json.body);\n// const expected = crypto.createHmac('sha256', secret).update(raw, 'utf8').digest('hex');\n// if ($json.headers['x-webhook-signature'] !== expected) { throw new Error('Invalid signature'); }\nreturn items;"
+      },
+      "id": "Validate",
+      "name": "Validate Signature (optional)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [540, 260]
+    },
+    {
+      "parameters": {},
+      "id": "Respond",
+      "name": "Respond 200",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [780, 260]
+    }
+  ],
+  "connections": {
+    "Webhook In": { "main": [[{ "node": "Validate Signature (optional)", "type": "main", "index": 0 }]] },
+    "Validate Signature (optional)": { "main": [[{ "node": "Respond 200", "type": "main", "index": 0 }]] }
+  }
+}
+
+
+

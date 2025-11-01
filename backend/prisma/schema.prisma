@@ -1,0 +1,442 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String             @unique
+  password           String
+  name               String
+  role               UserRole           @default(USER)
+  status             UserStatus         @default(ACTIVE)
+  phone              String?
+  isActive           Boolean            @default(true)
+  birthDate          DateTime?
+  licenseType        String?
+  registrationNumber String?
+  licenseExpiry      DateTime?
+  billingDueDay      Int?
+  address            String?
+  zipCode            String?
+  addressNumber      String?
+  state              String?
+  neighborhood       String?
+  city               String?
+  complement         String?
+  twoFactorEnabled   Boolean            @default(false)
+  twoFactorSecret    String?
+  backupCodes        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+  lastLoginAt        DateTime?
+  lastLoginIp        String?
+  auditLogs          AuditLog[]
+  bookings           Booking[]
+  refreshTokens      RefreshToken[]
+  notifications      UserNotification[]
+  vessels            UserVessel[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique @db.VarChar(512)
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  isRevoked Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Global system settings stored as key/value with type metadata
+model SystemSetting {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  value      String
+  type       String   @default("string") // string | number | boolean | json
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+
+  @@map("system_settings")
+  @@index([key])
+}
+
+/// Administrative log for settings changes
+model SettingsLog {
+  id        String   @id @default(uuid())
+  key       String
+  oldValue  String?
+  newValue  String?
+  changedBy String?
+  createdAt DateTime @default(now())
+
+  @@map("settings_logs")
+  @@index([key, createdAt])
+}
+
+/// Webhook configuration per tenant/account
+model Webhook {
+  id          String   @id @default(uuid())
+  tenantId    String
+  webhookUrl  String
+  secretToken String   @db.VarChar(512)
+  status      String   @default("active") // active | inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  logs        WebhookLog[]
+
+  @@map("webhooks")
+  @@index([tenantId])
+}
+
+/// Logs for webhook deliveries and receptions
+model WebhookLog {
+  id            String   @id @default(uuid())
+  webhookId     String
+  eventType     String
+  payload       Json
+  responseStatus Int
+  createdAt     DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@map("webhook_logs")
+  @@index([webhookId, createdAt])
+}
+
+/// Prevent replay attacks by storing recent signatures/nonces
+model WebhookReplay {
+  id        String   @id @default(uuid())
+  signature String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("webhook_replays")
+}
+
+/// Outgoing notification audit log (for /notification-management)
+model NotificationLog {
+  id         String   @id @default(uuid())
+  eventType  String
+  recipient  String
+  channel    String
+  message    String
+  meta       Json?
+  status     String   @default("success")
+  createdAt  DateTime @default(now())
+
+  @@index([eventType, channel, createdAt])
+  @@map("notification_logs")
+}
+
+model Vessel {
+  id                String        @id @default(uuid())
+  name              String
+  description       String?
+  capacity          Int?
+  location          String?
+  imageUrl          String?
+  isActive          Boolean       @default(true)
+  calendarDaysAhead Int           @default(62)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  blockedDates      BlockedDate[]
+  bookingLimit      BookingLimit?
+  bookings          Booking[]
+  users             UserVessel[]
+
+  @@index([name])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("vessels")
+}
+
+model UserVessel {
+  id                String          @id @default(uuid())
+  userId            String
+  vesselId          String
+  status            VesselStatus    @default(ACTIVE)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+  totalValue        Float           @default(0)
+  downPayment       Float           @default(0)
+  remainingAmount   Float           @default(0)
+  totalInstallments Int             @default(0)
+  marinaMonthlyFee  Float           @default(0)
+  marinaDueDay      Int             @default(5)
+  adHocCharges      AdHocCharge[]
+  installments      Installment[]
+  marinaPayments    MarinaPayment[]
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vessel            Vessel          @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vesselId])
+  @@index([userId])
+  @@index([vesselId])
+  @@map("user_vessels")
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  userId             String
+  vesselId           String
+  bookingDate        DateTime      @db.Date
+  status             BookingStatus @default(PENDING)
+  notes              String?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  createdByIp        String?
+  deletedAt          DateTime?
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vessel             Vessel        @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@unique([vesselId, bookingDate])
+  @@index([userId])
+  @@index([vesselId])
+  @@index([bookingDate])
+  @@index([status])
+  @@index([userId, status])
+  @@index([vesselId, bookingDate, status])
+  @@index([deletedAt])
+  @@map("bookings")
+}
+
+model BlockedDate {
+  id        String            @id @default(uuid())
+  vesselId  String
+  startDate DateTime          @db.Date
+  endDate   DateTime          @db.Date
+  reason    BlockedDateReason
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  vessel    Vessel            @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@index([vesselId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([vesselId, startDate, endDate])
+  @@map("blocked_dates")
+}
+
+model BookingLimit {
+  id                String   @id @default(uuid())
+  vesselId          String   @unique
+  maxActiveBookings Int      @default(2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  vessel            Vessel   @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@map("booking_limits")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+  user       User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id         String             @id @default(uuid())
+  title      String
+  message    String
+  type       String
+  isGlobal   Boolean            @default(false)
+  targetRole UserRole?
+  vesselId   String?
+  isActive   Boolean            @default(true)
+  expiresAt  DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  users      UserNotification[]
+
+  @@index([isActive])
+  @@index([isGlobal])
+  @@index([targetRole])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model UserNotification {
+  id             String       @id @default(uuid())
+  userId         String
+  notificationId String
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+  @@index([userId])
+  @@index([notificationId])
+  @@index([isRead])
+  @@index([userId, isRead])
+  @@map("user_notifications")
+}
+
+model Installment {
+  id                String        @id @default(uuid())
+  userVesselId      String
+  installmentNumber Int
+  amount            Float
+  dueDate           DateTime
+  paymentDate       DateTime?
+  status            PaymentStatus @default(PENDING)
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  userVessel        UserVessel    @relation(fields: [userVesselId], references: [id], onDelete: Cascade)
+
+  @@unique([userVesselId, installmentNumber])
+  @@index([userVesselId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([userVesselId, status])
+  @@index([userVesselId, dueDate])
+  @@map("installments")
+}
+
+model MarinaPayment {
+  id           String        @id @default(uuid())
+  userVesselId String
+  amount       Float
+  dueDate      DateTime
+  paymentDate  DateTime?
+  status       PaymentStatus @default(PENDING)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userVessel   UserVessel    @relation(fields: [userVesselId], references: [id], onDelete: Cascade)
+
+  @@index([userVesselId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([userVesselId, status])
+  @@index([userVesselId, dueDate])
+  @@map("marina_payments")
+}
+
+model AdHocCharge {
+  id           String        @id @default(uuid())
+  userVesselId String
+  title        String
+  description  String?
+  amount       Float
+  dueDate      DateTime?
+  status       PaymentStatus @default(PENDING)
+  paymentDate  DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userVessel   UserVessel    @relation(fields: [userVesselId], references: [id], onDelete: Cascade)
+
+  @@index([userVesselId])
+  @@index([status])
+  @@index([userVesselId, status])
+  @@index([userVesselId, dueDate])
+  @@map("ad_hoc_charges")
+}
+
+model WeeklyBlock {
+  id        String   @id @default(uuid())
+  dayOfWeek Int
+  reason    String
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dayOfWeek])
+  @@index([isActive])
+  @@map("weekly_blocks")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  OVERDUE
+  OVERDUE_PAYMENT
+  BLOCKED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum VesselStatus {
+  ACTIVE
+  PAID_OFF
+  DEFAULTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+enum BlockedDateReason {
+  MAINTENANCE
+  DRAW
+  UNAVAILABLE
+  OVERDUE_PAYMENT
+  OTHER
+}
+
+enum AuditAction {
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  VESSEL_CREATED
+  VESSEL_UPDATED
+  VESSEL_DELETED
+  BOOKING_CREATED
+  BOOKING_UPDATED
+  BOOKING_CANCELLED
+  BOOKING_DELETED
+  DATE_BLOCKED
+  DATE_UNBLOCKED
+  LIMIT_UPDATED
+  LOGIN
+  LOGOUT
+}

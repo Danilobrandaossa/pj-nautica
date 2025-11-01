@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: embarcacoes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/embarcacoes
+      JWT_SECRET: local-jwt-secret-key-123
+      JWT_REFRESH_SECRET: local-jwt-refresh-secret-key-123
+      FRONTEND_URL: http://localhost:3000
+      VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "3001:3000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/simple.conf:/etc/nginx/nginx.conf
+      - ./test.html:/usr/share/nginx/html/test.html
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+

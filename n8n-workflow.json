@@ -1,0 +1,175 @@
+{
+  "name": "Agendamentos WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agendamentos",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"event\"]}}",
+              "operation": "equals",
+              "value2": "booking.created"
+            }
+          ]
+        }
+      },
+      "name": "Novo Agendamento",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"event\"]}}",
+              "operation": "equals",
+              "value2": "booking.cancelled"
+            }
+          ]
+        }
+      },
+      "name": "Cancelamento",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "url": "https://api.whatsapp.com/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{$json[\"data\"][\"userPhone\"]}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json[\"messages\"][\"client\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Enviar para Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "WhatsApp API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.whatsapp.com/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "NUMERO_DO_GRUPO_ADMIN"
+            },
+            {
+              "name": "message",
+              "value": "={{$json[\"messages\"][\"admin\"]}}"
+            }
+          ]
+        }
+      },
+      "name": "Enviar para Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [650, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1",
+          "name": "WhatsApp API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\"success\": true, \"message\": \"Notificação enviada\"} }}"
+      },
+      "name": "Responder Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{
+        "node": "Novo Agendamento",
+        "type": "main",
+        "index": 0
+      }, {
+        "node": "Cancelamento",
+        "type": "main",
+        "index": 0
+      }]]
+    },
+    "Novo Agendamento": {
+      "main": [[{
+        "node": "Enviar para Cliente",
+        "type": "main",
+        "index": 0
+      }, {
+        "node": "Enviar para Admin",
+        "type": "main",
+        "index": 0
+      }]]
+    },
+    "Cancelamento": {
+      "main": [[{
+        "node": "Enviar para Cliente",
+        "type": "main",
+        "index": 0
+      }, {
+        "node": "Enviar para Admin",
+        "type": "main",
+        "index": 0
+      }]]
+    },
+    "Enviar para Cliente": {
+      "main": [[{
+        "node": "Responder Webhook",
+        "type": "main",
+        "index": 0
+      }]]
+    },
+    "Enviar para Admin": {
+      "main": [[{
+        "node": "Responder Webhook",
+        "type": "main",
+        "index": 0
+      }]]
+    }
+  },
+  "settings": {},
+  "staticData": null
+}
+
+
+
