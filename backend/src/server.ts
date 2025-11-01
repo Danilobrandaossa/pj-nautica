@@ -50,8 +50,11 @@ const staticAllowedOrigins = [
   'http://192.168.15.21:3005',
   'http://192.168.1.105:3000',
   'http://192.168.1.105:3005',
-  config.frontendUrl
-];
+  config.frontendUrl,
+  // Adicionar versões HTTP e HTTPS do frontend URL
+  config.frontendUrl.replace(/^https:/, 'http:'),
+  config.frontendUrl.replace(/^http:/, 'https:')
+].filter(Boolean); // Remove duplicatas
 
 // Health check simples antes de CORS (para Docker healthchecks)
 app.get('/health', (_req, res) => {
