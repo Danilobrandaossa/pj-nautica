@@ -30,7 +30,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-embarcacoes}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-embarcacoes_db}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL:-https://app.infinitynautica.com.br}
       PORT: 3001
     depends_on:
       postgres:
