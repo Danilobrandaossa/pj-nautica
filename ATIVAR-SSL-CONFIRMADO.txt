@@ -1,0 +1,47 @@
+Execute estes comandos AGORA no servidor:
+
+======================================================
+ATIVAR SSL - CERTIFICADO JÁ GERADO
+======================================================
+
+cd /opt/embarcacoes
+
+echo "=== Verificar certificado ==="
+docker exec embarcacoes_certbot certbot certificates
+
+echo ""
+echo "=== Backup do nginx.conf atual ==="
+cp nginx/nginx.conf nginx/nginx.conf.backup
+
+echo ""
+echo "=== Ativar configuração SSL ==="
+cp nginx/nginx.conf.ssl nginx/nginx.conf
+
+echo ""
+echo "=== Rebuild Nginx ==="
+docker compose -f docker-compose.prod.yml up -d --build nginx
+
+echo ""
+sleep 10
+
+echo "=== Verificar logs do Nginx ==="
+docker logs embarcacoes_nginx_prod --tail=30
+
+echo ""
+echo "=== Testar HTTPS ==="
+curl -I https://app.infinitynautica.com.br
+
+echo ""
+echo "=== Testar Redirect HTTP->HTTPS ==="
+curl -I http://app.infinitynautica.com.br
+
+echo ""
+echo "=== Status final ==="
+docker ps | grep nginx
+
+echo ""
+echo "✅ SSL ATIVADO!"
+echo "Acesse: https://app.infinitynautica.com.br"
+
+======================================================
+
