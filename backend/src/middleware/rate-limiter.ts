@@ -1,5 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { config } from '../config';
+import { Request } from 'express';
 
 export const rateLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
@@ -7,6 +8,14 @@ export const rateLimiter = rateLimit({
   message: 'Muitas requisições deste IP, tente novamente mais tarde.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Usar X-Forwarded-For quando disponível (trás do Nginx)
+  keyGenerator: (req: Request) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded && typeof forwarded === 'string') {
+      return forwarded.split(',')[0].trim();
+    }
+    return req.ip || req.socket.remoteAddress || 'unknown';
+  },
 });
 
 export const loginRateLimiter = rateLimit({
