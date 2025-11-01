@@ -74,9 +74,13 @@ app.use((req, res, next) => {
       res.status(204).end();
       return;
     }
+    // IMPORTANTE: chamar callback(null, true) para skip CORS validation
   }
   return next();
 });
+
+// Health check ANTES do CORS para bypass completo (igual ao /health)
+app.use('/api/health', healthRoutes);
 
 // Registrar rotas PWA ANTES do CORS para bypass completo
 app.use('/api/pwa', pwaRoutes);
@@ -129,9 +133,8 @@ app.use((_req, _res, next) => {
   next();
 });
 
-// Health check (deve vir antes de outras rotas para facilitar load balancers)
-app.use('/api/health', healthRoutes);
 // PWA routes já foram registradas antes do CORS (linha 64)
+// Health check já foi registrado ANTES do CORS (linha 83)
 app.use('/api/admin/settings', settingsRoutes);
 app.use('/api/admin/webhooks', webhookAdminRoutes);
 app.use('/api/webhook', webhookRoutes);
