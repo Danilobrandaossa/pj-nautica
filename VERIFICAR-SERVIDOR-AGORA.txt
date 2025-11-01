@@ -1,0 +1,104 @@
+======================================================
+COMANDOS PARA EXECUTAR NO SERVIDOR AGORA
+======================================================
+
+Após confirmar com "yes" no SSH, execute:
+
+======================================================
+PASSO 1: Verificar Status Atual
+======================================================
+
+docker ps -a
+docker compose -f docker-compose.prod.yml ps
+
+======================================================
+PASSO 2: Ver Logs para Diagnóstico
+======================================================
+
+echo "=== LOGS DO BACKEND ==="
+docker logs embarcacoes_backend_prod --tail=100
+
+echo ""
+echo "=== LOGS DO NGINX ==="
+docker logs embarcacoes_nginx_prod --tail=100
+
+echo ""
+echo "=== LOGS DO BANCO ==="
+docker logs embarcacoes_db_prod --tail=50
+
+======================================================
+PASSO 3: Tentar Restart Simples
+======================================================
+
+cd /opt/embarcacoes
+docker compose -f docker-compose.prod.yml restart
+
+sleep 30
+
+echo "=== Testando Health Check ==="
+curl -I http://localhost:3001/health || echo "❌ Backend não responde"
+curl -I http://localhost/ || echo "❌ Nginx não responde"
+
+======================================================
+PASSO 4: Se Não Funcionar, Verificar Mais
+======================================================
+
+echo "=== Status Detalhado ==="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep embarcacoes
+
+echo ""
+echo "=== Verificando Espaço em Disco ==="
+df -h
+
+echo ""
+echo "=== Verificando Memória ==="
+free -h
+
+======================================================
+PASSO 5: Backup e Pull Código
+======================================================
+
+echo "=== Fazendo backup ==="
+mkdir -p backups
+docker exec embarcacoes_db_prod pg_dump -U embarcacoes embarcacoes_db > backups/backup_pre_rebuild_$(date +%Y%m%d_%H%M%S).sql
+
+echo "=== Pull do código ==="
+git pull origin main
+
+======================================================
+PASSO 6: Rebuild Completo
+======================================================
+
+docker compose -f docker-compose.prod.yml down
+
+docker compose -f docker-compose.prod.yml build --no-cache
+
+docker compose -f docker-compose.prod.yml up -d
+
+sleep 30
+
+======================================================
+PASSO 7: Verificação Final
+======================================================
+
+echo "=== Status dos Containers ==="
+docker ps | grep embarcacoes
+
+echo ""
+echo "=== Testando Endpoints ==="
+curl -I http://localhost:3001/health && echo "✅ Backend OK"
+curl -I http://localhost/api/health && echo "✅ API OK"
+curl -I http://app.infinitynautica.com.br/ && echo "✅ Site OK"
+
+echo ""
+echo "=== Verificando Migrations ==="
+docker exec embarcacoes_backend_prod npx prisma migrate status
+
+echo ""
+echo "=== Verificando Erros ==="
+docker logs embarcacoes_backend_prod --tail=50 | grep -i error || echo "✅ Nenhum erro"
+
+======================================================
+
+COLE OS LOGS AQUI PARA ANÁLISE
+
