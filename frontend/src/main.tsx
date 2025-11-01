@@ -9,7 +9,8 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: true,
       retry: 1,
-      staleTime: 0, // Sempre considerar dados stale para refetch imediato
+      staleTime: 30000, // 30 segundos - dados ficam frescos por 30s
+      cacheTime: 600000, // 10 minutos - manter cache por 10min
     },
   },
 });
