@@ -60,33 +60,19 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Interceptar requisições PWA antes do CORS
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/pwa/')) {
-    // Adicionar headers CORS para rotas PWA
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Responder a OPTIONS requests diretamente
-    if (req.method === 'OPTIONS') {
-      return res.status(204).end();
-    }
+// CORS para rotas PWA públicas (sem validação de origin)
+app.use('/api/pwa', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
   }
   next();
 });
 
+// CORS para outras rotas (com validação de origin)
 app.use(cors({
-  origin: async (origin, callback) => {
-    // Permitir requisições sem origin para rotas PWA (já tratadas acima, mas garantir)
-    if (!origin) {
-      // Em desenvolvimento, sempre permitir
-      if (config.nodeEnv === 'development') {
-        return callback(null, true);
-      }
-      // Em produção, bloquear (as rotas PWA já foram tratadas acima)
-      return callback(new Error('Origin é obrigatório em produção'));
-    }
   origin: async (origin, callback) => {
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
     if (config.nodeEnv === 'development' && !origin) {
