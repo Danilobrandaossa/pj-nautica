@@ -130,6 +130,7 @@ app.use((_req, _res, next) => {
   logger.info(`${_req.method} ${_req.path}`, {
     ip: _req.ip,
     userAgent: _req.get('user-agent'),
+    origin: _req.get('origin'),
   });
   next();
 });
