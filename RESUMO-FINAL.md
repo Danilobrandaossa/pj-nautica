@@ -111,3 +111,4 @@ docker compose -f docker-compose.prod.yml up -d nginx
 
 **🎉 Pronto! Boa sorte com o deploy!**
 
+

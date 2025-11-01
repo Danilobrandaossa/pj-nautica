@@ -1,163 +1,139 @@
 ═══════════════════════════════════════════════════════════════════════════════
-COMANDOS PARA EXECUTAR NO SERVIDOR - COPIE E COLE BLOCO POR BLOCO
+COMANDOS PARA EXECUTAR NO SERVIDOR VPS
 ═══════════════════════════════════════════════════════════════════════════════
 
-⚠️  IMPORTANTE: Execute os comandos na ordem, um bloco por vez!
+ssh root@148.230.77.113
+Senha: Zy598859D@n22
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 1: Atualizar sistema e instalar Docker
-───────────────────────────────────────────────────────────────────────────────
-
-sudo apt update && sudo apt upgrade -y
-sudo apt install docker.io docker-compose git -y
-sudo systemctl enable docker
-sudo systemctl start docker
-sudo timedatectl set-timezone America/Sao_Paulo
-sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 2: Preparar diretório
+BLOCO 1: Backup e preparação
 ───────────────────────────────────────────────────────────────────────────────
 
 cd /opt
-mv embarcacoes embarcacoes.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+mv embarcacoes embarcacoes.backup.$(date +%Y%m%d) 2>/dev/null || true
 mkdir -p embarcacoes && cd embarcacoes
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 3: Clonar repositório
+BLOCO 2: Clonar repositório
 ───────────────────────────────────────────────────────────────────────────────
 
 git clone https://github.com/Danilobrandaossa/pj-nautica.git .
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 4: Configurar .env
+BLOCO 3: Configurar .env
 ───────────────────────────────────────────────────────────────────────────────
 
 cp backend/ENV.EXAMPLE .env
 nano .env
 
-# Configure as variáveis conforme DEPLOY-INFINITY-NAUTICA.md
-# Valores com caracteres especiais devem estar entre aspas simples!
-# Salve: Ctrl+X, Y, Enter
+# IMPORTANTE: Configure as variáveis!
+# Valores com caracteres especiais DEVEM estar entre aspas simples:
+# JWT_SECRET='valor_com_!@#$%^&*()'
+# JWT_REFRESH_SECRET='outro_valor_aqui'
+# POSTGRES_PASSWORD='senha_forte_aqui'
+# DATABASE_URL='postgresql://embarcacoes:senha@postgres:5432/embarcacoes_db?schema=public'
+# FRONTEND_URL='http://148.230.77.113'
+# VITE_API_URL='http://148.230.77.113/api'
+# N8N_USER='admin'
+# N8N_PASSWORD='senha_aqui'
+# N8N_HOST='n8n.seudominio.com.br'
+# N8N_WEBHOOK_URL='https://webhook.seudominio.com.br'
+
+# Salvar: Ctrl+X, depois Y, depois Enter
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 5: Criar diretórios
+BLOCO 4: Criar diretórios
 ───────────────────────────────────────────────────────────────────────────────
 
 mkdir -p nginx/ssl certbot/conf certbot/www
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 6: Verificar Docker
+BLOCO 5: Verificar Docker Compose
 ───────────────────────────────────────────────────────────────────────────────
 
-docker --version
+# Teste qual comando funciona:
 docker compose version
 
+# Se funcionar, use 'docker compose' (sem hífen)
+# Se não funcionar, use 'docker-compose'
+# Se nenhum funcionar, instale:
+apt install docker-compose -y
+
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 7: Deploy - Build
+BLOCO 6: Deploy - Opção A (docker compose sem hífen)
 ───────────────────────────────────────────────────────────────────────────────
 
 docker compose -f docker-compose.prod.yml build --no-cache
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 8: Deploy - Subir containers (sem nginx primeiro)
-───────────────────────────────────────────────────────────────────────────────
-
-docker compose -f docker-compose.prod.yml up -d postgres backend frontend
+docker compose -f docker-compose.prod.yml up -d
 sleep 30
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 9: Migrações
-───────────────────────────────────────────────────────────────────────────────
-
 docker compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate || true
 
 ───────────────────────────────────────────────────────────────────────────────
-BLOCO 10: Verificar containers
+BLOCO 7: Deploy - Opção B (docker-compose com hífen)
 ───────────────────────────────────────────────────────────────────────────────
 
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+sleep 30
+docker-compose -f docker-compose.prod.yml exec -T backend npm run prisma:migrate || true
+
+───────────────────────────────────────────────────────────────────────────────
+BLOCO 8: Verificar status
+───────────────────────────────────────────────────────────────────────────────
+
+# Use o comando que funcionou acima (docker compose ou docker-compose):
 docker compose -f docker-compose.prod.yml ps
+
+# Ver logs:
 docker compose -f docker-compose.prod.yml logs --tail=30
 
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 11: Testar backend
-───────────────────────────────────────────────────────────────────────────────
-
-curl http://localhost:3001/health
-curl http://localhost:3000
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 12: Configurar SSL (Certbot no host)
-───────────────────────────────────────────────────────────────────────────────
-
-# IMPORTANTE: Pare o container nginx primeiro
-docker compose -f docker-compose.prod.yml stop nginx
-
-# Instalar certbot no host
-sudo apt install certbot -y
-
-# Parar nginx do sistema se existir
-sudo systemctl stop nginx 2>/dev/null || true
-sudo systemctl disable nginx 2>/dev/null || true
-
-# Gerar certificado
-sudo certbot certonly --standalone -d app.infinitynautica.com.br
-
-# Se você tem n8n configurado:
-# sudo certbot certonly --standalone -d n8n.infinitynautica.com.br
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 13: Copiar certificados para Docker
-───────────────────────────────────────────────────────────────────────────────
-
-sudo cp -r /etc/letsencrypt certbot/conf/
-sudo chmod -R 755 certbot/conf
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 14: Iniciar Nginx
-───────────────────────────────────────────────────────────────────────────────
-
-docker compose -f docker-compose.prod.yml up -d nginx
-
-───────────────────────────────────────────────────────────────────────────────
-BLOCO 15: Testar tudo
-───────────────────────────────────────────────────────────────────────────────
-
-# Status
-docker compose -f docker-compose.prod.yml ps
-
-# Logs do nginx
-docker compose -f docker-compose.prod.yml logs nginx
-
-# Testar acesso local
+# Testar acesso:
 curl http://localhost
-curl http://localhost/api/health
-
-# Testar acesso pelo domínio (se DNS já propagou)
-curl http://app.infinitynautica.com.br
-curl https://app.infinitynautica.com.br
 
 ───────────────────────────────────────────────────────────────────────────────
 COMANDOS ÚTEIS
 ───────────────────────────────────────────────────────────────────────────────
 
-# Ver logs
+# Ver logs em tempo real:
 docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml logs -f backend
-docker compose -f docker-compose.prod.yml logs -f nginx
 
-# Reiniciar serviços
-docker compose -f docker-compose.prod.yml restart backend
+# Ver logs de um serviço específico:
+docker compose -f docker-compose.prod.yml logs -f nginx
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f frontend
+
+# Reiniciar um serviço:
 docker compose -f docker-compose.prod.yml restart nginx
 
-# Parar tudo
+# Parar tudo:
 docker compose -f docker-compose.prod.yml down
 
-# Verificar portas
-sudo netstat -tuln | grep -E "3000|3001|80|443"
+# Reconstruir um serviço:
+docker compose -f docker-compose.prod.yml up -d --build backend
+
+# Entrar em um container:
+docker exec -it embarcacoes_backend_prod sh
+docker exec -it embarcacoes_nginx_prod sh
+
+───────────────────────────────────────────────────────────────────────────────
+PROBLEMAS COMUNS
+───────────────────────────────────────────────────────────────────────────────
+
+# Se der erro "docker-compose: command not found":
+which docker-compose || docker compose version
+apt install docker-compose -y
+
+# Se der erro "Invalid interpolation format" no .env:
+# Certifique-se que valores com caracteres especiais estão entre aspas simples
+# JWT_SECRET='valor_com_!@#$'
+
+# Se porta 80 não responder:
+docker compose -f docker-compose.prod.yml ps nginx
+docker compose -f docker-compose.prod.yml logs nginx
+
+# Se precisar parar o Nginx do sistema:
+systemctl stop nginx
+systemctl disable nginx
 
 ───────────────────────────────────────────────────────────────────────────────
 
