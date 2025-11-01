@@ -36,6 +36,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy (importante para Nginx/Docker em produção)
+app.set('trust proxy', true);
+
 // Sentry (opcional)
 app.use(sentryRequestHandler);
 
