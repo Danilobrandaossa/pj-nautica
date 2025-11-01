@@ -73,8 +73,9 @@ app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
       return res.status(204).end();
     }
+    return next();
   }
-  next();
+  return next();
 });
 
 // CORS condicional - não aplicar em rotas PWA
