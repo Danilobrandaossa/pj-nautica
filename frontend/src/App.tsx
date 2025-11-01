@@ -114,6 +114,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="notification-management"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <NotificationManagementPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
 
             {/* 404 */}
