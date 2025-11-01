@@ -55,16 +55,9 @@ const staticAllowedOrigins = [
 
 import { settingsService } from './services/settings.service';
 
-// Middleware para permitir healthchecks sem CORS
-app.use((req, res, next) => {
-  if (req.url?.startsWith('/health') || req.url?.startsWith('/api/health')) {
-    // Permitir healthchecks sem CORS
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    next();
-    return;
-  }
-  next();
+// Health check simples antes de CORS (para Docker healthchecks)
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 app.use(cors({
