@@ -3,6 +3,17 @@ import { settingsService } from '../services/settings.service';
 
 const router = Router();
 
+// Middleware CORS para todas as rotas PWA (públicas)
+router.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  return next();
+});
+
 /**
  * GET /api/pwa/manifest.json
  * Retorna o manifest.json dinâmico baseado nas configurações do sistema
