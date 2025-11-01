@@ -406,5 +406,22 @@ export class UserService {
       data: { password: hashedPassword },
     });
   }
+
+  async adminResetPassword(userId: string, newPassword: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new AppError(404, 'Usuário não encontrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+  }
 }
 

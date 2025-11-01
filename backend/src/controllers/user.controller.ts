@@ -65,6 +65,10 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
 });
 
+const adminResetPasswordSchema = z.object({
+  newPassword: z.string().min(6, 'Nova senha deve ter no mínimo 6 caracteres'),
+});
+
 export class UserController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
@@ -216,6 +220,25 @@ export class UserController {
       await userService.changePassword(userId, currentPassword, newPassword);
 
       res.json({ message: 'Senha alterada com sucesso' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async adminResetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      
+      // Validar UUID
+      if (!isValidUUID(id)) {
+        return next(new AppError(400, 'ID inválido'));
+      }
+      
+      const { newPassword } = adminResetPasswordSchema.parse(req.body);
+
+      await userService.adminResetPassword(id, newPassword);
+
+      res.json({ message: 'Senha redefinida com sucesso' });
     } catch (error) {
       next(error);
     }

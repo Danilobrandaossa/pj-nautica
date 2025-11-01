@@ -28,6 +28,7 @@ router.post('/change-password', passwordChangeLimiter, userController.changePass
 // Rotas apenas para Admin
 router.post('/', isAdmin, userMutationLimiter, userController.create.bind(userController));
 router.get('/', isAdmin, userController.findAll.bind(userController));
+router.post('/:id/reset-password', isAdmin, passwordChangeLimiter, userController.adminResetPassword.bind(userController));
 router.get('/:id', isAdmin, userController.findById.bind(userController));
 router.put('/:id', isAdmin, userMutationLimiter, userController.update.bind(userController));
 router.delete('/:id', isAdmin, userMutationLimiter, userController.delete.bind(userController));
