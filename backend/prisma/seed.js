@@ -7,12 +7,14 @@ async function main() {
   console.log('🌱 Iniciando seed do banco de dados...\n');
 
   // Criar usuário Admin principal
-  const adminPassword = await bcrypt.hash('Zy598859D@n', 12);
+  const adminPassword = await bcrypt.hash('05062618592', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'contato@danilobrandao.com.br' },
-    update: {},
+    where: { email: 'danilo@danilobrandao.com.br' },
+    update: {
+      password: adminPassword,
+    },
     create: {
-      email: 'contato@danilobrandao.com.br',
+      email: 'danilo@danilobrandao.com.br',
       password: adminPassword,
       name: 'Danilo Brandão',
       role: 'ADMIN',
@@ -50,8 +52,8 @@ async function main() {
 
   console.log('\n🎉 Sistema inicializado com sucesso!');
   console.log('\n📋 Suas credenciais de acesso:');
-  console.log('   Email: contato@danilobrandao.com.br');
-  console.log('   Senha: Zy598859D@n');
+  console.log('   Email: danilo@danilobrandao.com.br');
+  console.log('   Senha: 05062618592');
   console.log('\n🚀 Próximos passos:');
   console.log('   1. Faça login no sistema');
   console.log('   2. Cadastre suas embarcações');
