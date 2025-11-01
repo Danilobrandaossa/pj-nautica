@@ -31,7 +31,7 @@ export class WebhookAdminController {
     } catch (error) { next(error); }
   }
 
-  async logs(req: Request, res: Response, next: NextFunction) {
+  async logs(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { tenantId, eventType, from, to } = req.query as any;
       const where: any = {};
@@ -43,8 +43,9 @@ export class WebhookAdminController {
       if (from || to) where.createdAt = { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined };
       const items = await prisma.webhookLog.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 });
       res.json({ items });
-      return;
-    } catch (error) { next(error); }
+    } catch (error) { 
+      next(error); 
+    }
   }
 
   async resend(req: Request, res: Response, next: NextFunction) {
