@@ -55,6 +55,18 @@ const staticAllowedOrigins = [
 
 import { settingsService } from './services/settings.service';
 
+// Middleware para permitir healthchecks sem CORS
+app.use((req, res, next) => {
+  if (req.url?.startsWith('/health') || req.url?.startsWith('/api/health')) {
+    // Permitir healthchecks sem CORS
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    next();
+    return;
+  }
+  next();
+});
+
 app.use(cors({
   origin: async (origin, callback) => {
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
