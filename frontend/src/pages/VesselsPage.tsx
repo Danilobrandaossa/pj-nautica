@@ -16,7 +16,7 @@ export default function VesselsPage() {
   const [editingVessel, setEditingVessel] = useState<any>(null);
 
   const { data: vessels, isLoading } = useQuery({
-    queryKey: ['my-vessels'],
+    queryKey: ['vessels'],
     queryFn: async () => {
       const { data } = await api.get(isAdmin ? '/vessels' : '/vessels/my-vessels');
       return data;
