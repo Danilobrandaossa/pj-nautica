@@ -60,11 +60,11 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Middleware para permitir requisições HEAD/OPTIONS sem Origin em produção (healthchecks)
+// Middleware para permitir requisições HEAD/OPTIONS/GET sem Origin em produção (healthchecks)
 app.use((req, res, next) => {
-  // Em produção, se não houver Origin e for HEAD/OPTIONS, permitir diretamente
-  if (config.nodeEnv === 'production' && !req.headers.origin && ['HEAD', 'OPTIONS'].includes(req.method)) {
-    // Para HEAD/OPTIONS sem origin, enviar headers CORS básicos e continuar
+  // Em produção, se não houver Origin e for HEAD/OPTIONS/GET, permitir diretamente
+  if (config.nodeEnv === 'production' && !req.headers.origin && ['HEAD', 'OPTIONS', 'GET'].includes(req.method)) {
+    // Para requisições sem origin, enviar headers CORS básicos e continuar
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
