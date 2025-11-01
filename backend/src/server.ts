@@ -60,19 +60,25 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// CORS para rotas PWA públicas (sem validação de origin)
-app.use('/api/pwa', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+// Marcar rotas PWA para bypass do CORS
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/pwa/')) {
+    // Adicionar flag para indicar que é rota PWA pública
+    (req as any).isPwaRoute = true;
+    // Adicionar headers CORS diretamente
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    // Responder OPTIONS diretamente
+    if (req.method === 'OPTIONS') {
+      return res.status(204).end();
+    }
   }
-  return next();
+  next();
 });
 
-// CORS para outras rotas (com validação de origin)
-app.use(cors({
+// CORS condicional - não aplicar em rotas PWA
+const corsMiddleware = cors({
   origin: async (origin, callback) => {
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
     if (config.nodeEnv === 'development' && !origin) {
@@ -97,7 +103,16 @@ app.use(cors({
     }
   },
   credentials: true,
-}));
+});
+
+app.use((req, res, next) => {
+  // Se for rota PWA, pular CORS completamente
+  if ((req as any).isPwaRoute) {
+    return next();
+  }
+  // Aplicar CORS para outras rotas
+  corsMiddleware(req, res, next);
+});
 
 // Rate limiting
 app.use(rateLimiter);
