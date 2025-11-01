@@ -1,0 +1,31 @@
+Execute estes comandos no servidor para diagnosticar rapidamente:
+
+======================================================
+DIAGNÓSTICO RÁPIDO DO SISTEMA
+======================================================
+
+# 1. Verificar se está acessível externamente
+curl -I http://localhost:3001/health
+
+# 2. Verificar Nginx
+curl -I http://localhost/health
+
+# 3. Ver logs do Nginx
+docker logs embarcacoes_nginx_prod --tail=50
+
+# 4. Ver logs do Backend
+docker logs embarcacoes_backend_prod --tail=50 | tail -20
+
+# 5. Testar acesso ao site
+curl -I http://app.infinitynautica.com.br
+
+# 6. Verificar se banco tem dados
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT COUNT(*) FROM users;"
+
+# 7. Verificar se há erros nos logs
+docker logs embarcacoes_backend_prod 2>&1 | grep -i error | tail -10
+
+======================================================
+
+Cole toda a saída destes comandos aqui para análise.
+
