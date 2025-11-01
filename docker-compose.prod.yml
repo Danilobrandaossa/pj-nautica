@@ -52,7 +52,8 @@ services:
     container_name: embarcacoes_frontend_prod
     restart: always
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - embarcacoes_network_prod
 

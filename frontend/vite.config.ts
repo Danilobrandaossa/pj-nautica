@@ -22,17 +22,10 @@ export default defineConfig({
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 600,
+    // Use single bundle to avoid all circular dependency issues
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor-react';
-            if (id.includes('@tanstack')) return 'vendor-tanstack';
-            if (id.includes('date-fns')) return 'vendor-datefns';
-            if (id.includes('lucide-react')) return 'vendor-icons';
-            return 'vendor';
-          }
-        },
+        manualChunks: undefined,
       },
     },
   },
