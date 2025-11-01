@@ -60,6 +60,24 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Middleware para permitir requisições HEAD/OPTIONS sem Origin em produção (healthchecks)
+app.use((req, res, next) => {
+  // Em produção, se não houver Origin e for HEAD/OPTIONS, permitir diretamente
+  if (config.nodeEnv === 'production' && !req.headers.origin && ['HEAD', 'OPTIONS'].includes(req.method)) {
+    // Para HEAD/OPTIONS sem origin, enviar headers CORS básicos e continuar
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    // Se for OPTIONS, responder imediatamente
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
+      return;
+    }
+  }
+  return next();
+});
+
 // Registrar rotas PWA ANTES do CORS para bypass completo
 app.use('/api/pwa', pwaRoutes);
 
@@ -71,8 +89,9 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Em produção, sempre exigir origin
-    if (!origin) {
+    // Em produção, permitir requisições sem origin apenas para healthchecks/crawlers
+    // Isso permite que healthchecks do Docker/Kubernetes funcionem corretamente
+    if (config.nodeEnv === 'production' && !origin) {
       return callback(new Error('Origin é obrigatório em produção'));
     }
     
@@ -82,7 +101,7 @@ app.use(cors({
       ...(Array.isArray(dynamicOrigins) ? dynamicOrigins : [])
     ]);
 
-    if (allowedOrigins.has(origin)) {
+    if (origin && allowedOrigins.has(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Não permitido pelo CORS'));
