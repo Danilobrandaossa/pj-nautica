@@ -60,6 +60,15 @@ app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Permitir rotas PWA públicas sem CORS
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/pwa/') && req.method === 'GET') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+  }
+  next();
+});
+
 app.use(cors({
   origin: async (origin, callback) => {
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
