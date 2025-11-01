@@ -1,0 +1,28 @@
+# ==========================================
+# COMANDOS RÁPIDOS PARA EXECUTAR NO SERVIDOR
+# ==========================================
+# O banco já foi reconstruído, agora vamos verificar
+
+# 1. Verificar Admin
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT id, email, name, role FROM users WHERE role = 'ADMIN' AND \"deletedAt\" IS NULL;"
+
+# 2. Contagem de Dados
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT 'Usuários' as item, COUNT(*)::text FROM users WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Embarcações', COUNT(*)::text FROM vessels WHERE \"deletedAt\" IS NULL UNION ALL SELECT 'Reservas', COUNT(*)::text FROM bookings WHERE \"deletedAt\" IS NULL;"
+
+# 3. Verificar Reservas
+docker exec embarcacoes_db_prod psql -U embarcacoes -d embarcacoes_db -c "SELECT TO_CHAR(b.\"bookingDate\", 'DD/MM/YYYY') as data, b.status, u.email FROM bookings b JOIN users u ON b.\"userId\" = u.id WHERE b.\"deletedAt\" IS NULL ORDER BY b.\"bookingDate\" DESC LIMIT 10;"
+
+# 4. Logs do Backend
+docker logs embarcacoes_backend_prod --tail=100 | grep -i error || echo "✅ Nenhum erro"
+
+# 5. Health Check
+curl -f http://localhost:3001/health && echo "✅ Backend OK"
+
+# 6. Status dos Containers
+docker ps --format "table {{.Names}}\t{{.Status}}"
+
+# 7. Se Admin não existir, criar:
+docker exec embarcacoes_backend_prod node prisma/seed.js
+
+# ==========================================
+
