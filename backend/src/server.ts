@@ -53,8 +53,6 @@ const staticAllowedOrigins = [
   config.frontendUrl
 ];
 
-import { settingsService } from './services/settings.service';
-
 // Health check simples antes de CORS (para Docker healthchecks)
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -87,7 +85,7 @@ app.use('/api/pwa', pwaRoutes);
 
 // CORS para outras rotas (com validação de origin)
 app.use(cors({
-  origin: async (origin, callback) => {
+  origin: (origin, callback) => {
     // Em desenvolvimento, permitir requisições sem origin (Postman, etc)
     if (config.nodeEnv === 'development' && !origin) {
       return callback(null, true);
@@ -99,11 +97,8 @@ app.use(cors({
       return callback(new Error('Origin é obrigatório em produção'));
     }
     
-    const dynamicOrigins = await settingsService.get<string[]>('frontend.allowedOrigins', []);
-    const allowedOrigins = new Set([...
-      staticAllowedOrigins,
-      ...(Array.isArray(dynamicOrigins) ? dynamicOrigins : [])
-    ]);
+    // Use apenas origens estáticas para evitar consultas assíncronas ao banco
+    const allowedOrigins = new Set(staticAllowedOrigins);
 
     if (origin && allowedOrigins.has(origin)) {
       callback(null, true);
