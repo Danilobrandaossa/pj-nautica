@@ -159,7 +159,22 @@ export default function SystemSettingsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Sistema (exibido no login e header)</label>
+              <input
+                type="text"
+                className="input"
+                defaultValue={get('branding.appName', 'Sistema de Embarcações')}
+                onChange={(e) => {
+                  debouncedUpsert('branding.appName', e.target.value, 'string');
+                  // manter PWA em sincronia automaticamente
+                  debouncedUpsert('pwa.name', e.target.value, 'string');
+                  debouncedUpsert('pwa.shortName', e.target.value.substring(0, 12), 'string');
+                }}
+                placeholder="Nome do seu sistema"
+              />
+            </div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Logo da Empresa</label>
             <div className="flex items-center gap-3">
               <input type="file" accept="image/*" onChange={(e) => e.target.files && handleLogoUpload(e.target.files[0])} />

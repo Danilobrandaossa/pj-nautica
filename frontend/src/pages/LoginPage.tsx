@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ship, Mail, Lock } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuthStore();
   const navigate = useNavigate();
+  const [appName, setAppName] = useState('Sistema de Embarcações');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get('/admin/settings');
+        const list: Array<{ key: string; value: any }> = data.settings || [];
+        const branding = list.find((s) => s.key === 'branding.appName');
+        const name = (branding?.value as string) || 'Sistema de Embarcações';
+        setAppName(name);
+        document.title = name;
+      } catch {
+        document.title = 'Sistema de Embarcações';
+      }
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +58,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-600 mb-4">
             <Ship className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Sistema de Embarcações
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{appName}</h1>
           <p className="text-gray-600">
             Faça login para acessar o sistema
           </p>
@@ -111,9 +126,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-600 mt-8">
-          Sistema de Agendamento de Embarcações © 2025
-        </p>
+        <p className="text-center text-sm text-gray-600 mt-8">{appName} © 2025</p>
       </div>
     </div>
   );
