@@ -16,15 +16,19 @@ export default function LoginPage() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get('/admin/settings');
-        const list: Array<{ key: string; value: any }> = data.settings || [];
-        const branding = list.find((s) => s.key === 'branding.appName');
-        const name = (branding?.value as string) || 'Sistema de Embarcações';
-        setAppName(name);
-        document.title = name;
-      } catch {
-        document.title = 'Sistema de Embarcações';
+        // Buscar nome do app do manifest público para evitar 401 em /admin/settings
+        const resp = await fetch('/api/pwa/manifest.json', { cache: 'no-store' });
+        if (resp.ok) {
+          const manifest = await resp.json();
+          const name = manifest?.name || 'Sistema de Embarcações';
+          setAppName(name);
+          document.title = name;
+          return;
+        }
+      } catch (e) {
+        // ignora e mantém padrão
       }
+      document.title = 'Sistema de Embarcações';
     })();
   }, []);
 
