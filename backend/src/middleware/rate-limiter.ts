@@ -9,8 +9,8 @@ export const rateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Desabilitar validação de trust proxy do pacote (estamos atrás do Nginx e já tratamos X-Forwarded-For)
-  // @ts-expect-error: validate option pode não existir dependendo da versão dos tipos
-  validate: { trustProxy: false },
+  // Alguns tipos não expõem `validate`; usar coerção para evitar alerta de tipos
+  ...( { validate: { trustProxy: false } } as any ),
   // Usar X-Forwarded-For quando disponível (trás do Nginx)
   keyGenerator: (req: Request) => {
     const forwarded = req.headers['x-forwarded-for'];
