@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AdHocChargeService } from '../services/ad-hoc-charge.service';
 import { logger } from '../utils/logger';
-import { AppError } from '../middleware/error-handler';
 
 const adHocChargeService = new AdHocChargeService();
 
