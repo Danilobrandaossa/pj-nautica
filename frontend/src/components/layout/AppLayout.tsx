@@ -55,6 +55,21 @@ export default function AppLayout() {
     staleTime: 60_000,
   });
 
+  // Buscar nome do sistema dinâmico
+  const { data: appName } = useQuery({
+    queryKey: ['branding-app-name'],
+    queryFn: async () => {
+      try {
+        const { data } = await api.get('/admin/settings');
+        const setting = (data.settings as Array<{ key: string; value: string }>).find((s) => s.key === 'branding.appName');
+        return (setting?.value as string) || 'Sistema de Embarcações';
+      } catch {
+        return 'Sistema de Embarcações';
+      }
+    },
+    staleTime: 60_000,
+  });
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -102,9 +117,13 @@ export default function AppLayout() {
                   <Ship className="w-6 h-6 text-white" />
                 </div>
               )}
-              <div>
-                <span className="text-lg font-bold text-gray-900">Sistema de</span>
-                <span className="text-lg font-bold text-primary-600 block">Embarcações</span>
+              <div className="leading-tight">
+                <span className="text-lg font-bold text-gray-900">
+                  {appName?.split(' ')[0] || 'Sistema'}
+                </span>
+                <span className="text-lg font-bold text-primary-600 block">
+                  {appName?.split(' ').slice(1).join(' ') || 'Embarcações'}
+                </span>
               </div>
             </div>
             <button
