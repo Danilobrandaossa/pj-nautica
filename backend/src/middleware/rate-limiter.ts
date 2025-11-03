@@ -8,6 +8,8 @@ export const rateLimiter = rateLimit({
   message: 'Muitas requisições deste IP, tente novamente mais tarde.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Estamos atrás do Nginx (trust proxy habilitado no app)
+  trustProxy: true,
   // Usar X-Forwarded-For quando disponível (trás do Nginx)
   keyGenerator: (req: Request) => {
     const forwarded = req.headers['x-forwarded-for'];
