@@ -8,8 +8,9 @@ export const rateLimiter = rateLimit({
   message: 'Muitas requisições deste IP, tente novamente mais tarde.',
   standardHeaders: true,
   legacyHeaders: false,
-  // Estamos atrás do Nginx (trust proxy habilitado no app)
-  trustProxy: true,
+  // Desabilitar validação de trust proxy do pacote (estamos atrás do Nginx e já tratamos X-Forwarded-For)
+  // @ts-expect-error: validate option pode não existir dependendo da versão dos tipos
+  validate: { trustProxy: false },
   // Usar X-Forwarded-For quando disponível (trás do Nginx)
   keyGenerator: (req: Request) => {
     const forwarded = req.headers['x-forwarded-for'];
@@ -18,7 +19,7 @@ export const rateLimiter = rateLimit({
     }
     return req.ip || req.socket.remoteAddress || 'unknown';
   },
-});
+} as any);
 
 export const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
