@@ -179,3 +179,34 @@ docker exec -it embarcacoes_backend_prod sh
 ---
 
 Dúvidas ou erros durante o processo: valide DNS, `.env`, e os logs dos containers (`backend` e `nginx`).
+
+## 15) Atualizações Importantes (2025-11)
+
+- API e Frontend devem falar sempre em HTTPS. Garanta no `.env`:
+  - `VITE_API_URL=https://SEU_DOMINIO/api` (NUNCA http)
+
+- Rate Limiting: desabilitado por padrão no backend a pedido do cliente. Se quiser reativar futuramente, ajuste `backend/src/server.ts` e `backend/src/routes/auth.routes.ts` conforme necessidade.
+
+- Service Worker (PWA): registro desativado temporariamente no frontend para estabilidade de login. Quando desejar reativar, ajuste `frontend/src/main.tsx` e recrie o frontend.
+
+- Rebuild rápido apenas do frontend:
+```bash
+cd /opt/embarcacoes
+docker compose -f docker-compose.prod.yml build --no-cache frontend
+docker compose -f docker-compose.prod.yml up -d frontend
+```
+
+- Rebuild rápido apenas do backend:
+```bash
+cd /opt/embarcacoes
+docker compose -f docker-compose.prod.yml up -d --build backend
+```
+
+- Limpeza de cache do navegador (após qualquer troca de SW/manifest):
+  1) DevTools → Application → Service Workers → Unregister
+  2) Application → Clear storage → Clear site data
+  3) Hard refresh (Ctrl+F5)
+
+- 429 (Too Many Requests): não deve ocorrer com rate limiting desativado. Se reativar limites e ocorrer 429, eleve `RATE_LIMIT_MAX_REQUESTS` no `.env` e recrie o backend.
+
+- Loop/reload na página de login: a tela já busca o nome do app no endpoint público `/api/pwa/manifest.json` para evitar 401. Se reativar chamadas autenticadas no login, garanta que não há redirecionamento para `/login` em caso de 401.
