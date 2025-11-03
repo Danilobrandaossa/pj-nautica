@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error-handler';
-import { rateLimiter } from './middleware/rate-limiter';
+// rateLimiter removido (desabilitado): import comentado
 import { metricsMiddleware, metricsHandler } from './middleware/metrics';
 import { sentryRequestHandler, sentryErrorHandler } from './utils/sentry';
 
