@@ -36,21 +36,8 @@ export const usePWA = () => {
       setDeferredPrompt(null);
     };
 
-    // Register service worker only in production to avoid dev cache issues
-    const registerServiceWorker = async () => {
-      if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-        try {
-          await navigator.serviceWorker.register('/sw.js');
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Service Worker registration failed:', error);
-          }
-        }
-      }
-    };
-
     checkInstalled();
-    registerServiceWorker();
+    // service worker é registrado em src/main.tsx via /api/pwa/service-worker.js
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);

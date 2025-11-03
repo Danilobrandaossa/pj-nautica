@@ -422,6 +422,10 @@ function removeOfflineAction(id) {
 
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Service-Worker-Allowed', '/');
+    // Evitar cache agressivo do service worker
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.send(serviceWorker);
   } catch (error) {
     next(error);
