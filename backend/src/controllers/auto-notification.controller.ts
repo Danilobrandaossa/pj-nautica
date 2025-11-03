@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { AutoNotificationService } from '../services/auto-notification.service';
 import { logger } from '../utils/logger';
 
@@ -6,7 +6,7 @@ const autoNotificationService = new AutoNotificationService();
 
 export class AutoNotificationController {
   // Executar todas as verificações automáticas
-  async runAllChecks(_req: Request, res: Response) {
+  async runAllChecks(_req: Request, res: Response, next: NextFunction) {
     try {
       await autoNotificationService.runAllChecks();
 
@@ -16,15 +16,12 @@ export class AutoNotificationController {
       });
     } catch (error) {
       logger.error('Erro ao executar verificações automáticas:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Verificar apenas notificações de pagamento
-  async checkPaymentNotifications(_req: Request, res: Response) {
+  async checkPaymentNotifications(_req: Request, res: Response, next: NextFunction) {
     try {
       await autoNotificationService.checkPaymentDueNotifications();
 
@@ -34,15 +31,12 @@ export class AutoNotificationController {
       });
     } catch (error) {
       logger.error('Erro ao verificar notificações de pagamento:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Verificar apenas notificações de manutenção
-  async checkMaintenanceNotifications(_req: Request, res: Response) {
+  async checkMaintenanceNotifications(_req: Request, res: Response, next: NextFunction) {
     try {
       await autoNotificationService.checkMaintenanceNotifications();
 
@@ -52,10 +46,7 @@ export class AutoNotificationController {
       });
     } catch (error) {
       logger.error('Erro ao verificar notificações de manutenção:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 }

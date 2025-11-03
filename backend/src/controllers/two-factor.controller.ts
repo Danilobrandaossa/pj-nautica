@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { TwoFactorService } from '../services/two-factor.service';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/error-handler';
 
 const twoFactorService = new TwoFactorService();
 
@@ -12,15 +13,12 @@ const verifyTokenSchema = z.object({
 
 export class TwoFactorController {
   // Gerar secret e QR code para configuração
-  async generateSecret(req: Request, res: Response) {
+  async generateSecret(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const result = await twoFactorService.generateSecret(userId);
@@ -31,24 +29,18 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao gerar secret 2FA:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Verificar token 2FA
-  async verifyToken(req: Request, res: Response) {
+  async verifyToken(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
       const validatedData = verifyTokenSchema.parse(req.body);
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const isValid = await twoFactorService.verifyToken(userId, validatedData.token);
@@ -59,24 +51,18 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao verificar token 2FA:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Habilitar 2FA
-  async enableTwoFactor(req: Request, res: Response) {
+  async enableTwoFactor(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
       const validatedData = verifyTokenSchema.parse(req.body);
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const result = await twoFactorService.enableTwoFactor(userId, validatedData.token);
@@ -87,24 +73,18 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao habilitar 2FA:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Desabilitar 2FA
-  async disableTwoFactor(req: Request, res: Response) {
+  async disableTwoFactor(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
       const validatedData = verifyTokenSchema.parse(req.body);
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const result = await twoFactorService.disableTwoFactor(userId, validatedData.token);
@@ -115,24 +95,18 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao desabilitar 2FA:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Regenerar códigos de backup
-  async regenerateBackupCodes(req: Request, res: Response) {
+  async regenerateBackupCodes(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
       const validatedData = verifyTokenSchema.parse(req.body);
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const result = await twoFactorService.regenerateBackupCodes(userId, validatedData.token);
@@ -143,23 +117,17 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao regenerar códigos de backup:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Obter status do 2FA
-  async getStatus(req: Request, res: Response) {
+  async getStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = (req.user as any)?.id;
 
       if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: 'Usuário não autenticado'
-        });
+        return next(new AppError(401, 'Usuário não autenticado'));
       }
 
       const status = await twoFactorService.getTwoFactorStatus(userId);
@@ -170,10 +138,7 @@ export class TwoFactorController {
       });
     } catch (error) {
       logger.error('Erro ao obter status 2FA:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 }

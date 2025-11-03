@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { AdHocChargeService } from '../services/ad-hoc-charge.service';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/error-handler';
 
 const adHocChargeService = new AdHocChargeService();
 
@@ -29,7 +30,7 @@ const updateChargeSchema = z.object({
 
 export class AdHocChargeController {
   // Criar nova cobrança avulsa
-  async createCharge(req: Request, res: Response) {
+  async createCharge(req: Request, res: Response, next: NextFunction) {
     try {
       const { userVesselId } = req.params;
       const validatedData = createChargeSchema.parse(req.body);
@@ -48,15 +49,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao criar cobrança avulsa:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Listar cobranças avulsas de um usuário/embarcação
-  async getCharges(req: Request, res: Response) {
+  async getCharges(req: Request, res: Response, next: NextFunction) {
     try {
       const { userVesselId } = req.params;
 
@@ -68,15 +66,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao buscar cobranças:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Listar todas as cobranças avulsas (admin)
-  async getAllCharges(req: Request, res: Response) {
+  async getAllCharges(req: Request, res: Response, next: NextFunction) {
     try {
       const { userId, vesselId, status } = req.query;
 
@@ -92,15 +87,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao buscar todas as cobranças:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Pagar cobrança avulsa
-  async payCharge(req: Request, res: Response) {
+  async payCharge(req: Request, res: Response, next: NextFunction) {
     try {
       const { chargeId } = req.params;
       const validatedData = payChargeSchema.parse(req.body);
@@ -117,15 +109,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao pagar cobrança:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Cancelar cobrança avulsa
-  async cancelCharge(req: Request, res: Response) {
+  async cancelCharge(req: Request, res: Response, next: NextFunction) {
     try {
       const { chargeId } = req.params;
       const { reason } = req.body;
@@ -139,15 +128,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao cancelar cobrança:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Atualizar cobrança avulsa
-  async updateCharge(req: Request, res: Response) {
+  async updateCharge(req: Request, res: Response, next: NextFunction) {
     try {
       const { chargeId } = req.params;
       const validatedData = updateChargeSchema.parse(req.body);
@@ -161,15 +147,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao atualizar cobrança:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Deletar cobrança avulsa
-  async deleteCharge(req: Request, res: Response) {
+  async deleteCharge(req: Request, res: Response, next: NextFunction) {
     try {
       const { chargeId } = req.params;
 
@@ -181,15 +164,12 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao deletar cobrança:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Buscar histórico financeiro completo
-  async getFinancialHistory(req: Request, res: Response) {
+  async getFinancialHistory(req: Request, res: Response, next: NextFunction) {
     try {
       const { userVesselId } = req.params;
 
@@ -201,10 +181,7 @@ export class AdHocChargeController {
       });
     } catch (error) {
       logger.error('Erro ao buscar histórico financeiro:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 }

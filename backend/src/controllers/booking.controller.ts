@@ -93,8 +93,7 @@ export class BookingController {
       const userRole = req.user!.role;
 
       if (userRole !== UserRole.ADMIN && booking.user.id !== userId) {
-        res.status(403).json({ error: 'Sem permissão para ver esta reserva' });
-        return;
+        return next(new AppError(403, 'Sem permissão para ver esta reserva'));
       }
 
       res.json(booking);

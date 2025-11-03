@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { WeeklyBlockService } from '../services/weekly-block.service';
 import { logger } from '../utils/logger';
+import { AppError } from '../middleware/error-handler';
 
 const weeklyBlockService = new WeeklyBlockService();
 
@@ -21,15 +22,12 @@ const updateWeeklyBlockSchema = z.object({
 
 export class WeeklyBlockController {
   // Criar novo bloqueio semanal
-  async createWeeklyBlock(req: Request, res: Response) {
+  async createWeeklyBlock(req: Request, res: Response, next: NextFunction) {
     try {
       const validatedData = createWeeklyBlockSchema.parse(req.body);
 
       if (validatedData.dayOfWeek === undefined || !validatedData.reason) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dia da semana e motivo são obrigatórios'
-        });
+        return next(new AppError(400, 'Dia da semana e motivo são obrigatórios'));
       }
 
       const weeklyBlock = await weeklyBlockService.createWeeklyBlock({
@@ -45,15 +43,12 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao criar bloqueio semanal:', error);
-      return res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Listar todos os bloqueios semanais
-  async getAllWeeklyBlocks(_req: Request, res: Response) {
+  async getAllWeeklyBlocks(_req: Request, res: Response, next: NextFunction) {
     try {
       const weeklyBlocks = await weeklyBlockService.getAllWeeklyBlocks();
 
@@ -63,15 +58,12 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao buscar bloqueios semanais:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Listar bloqueios semanais ativos
-  async getActiveWeeklyBlocks(_req: Request, res: Response) {
+  async getActiveWeeklyBlocks(_req: Request, res: Response, next: NextFunction) {
     try {
       const weeklyBlocks = await weeklyBlockService.getActiveWeeklyBlocks();
 
@@ -81,15 +73,12 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao buscar bloqueios semanais ativos:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Atualizar bloqueio semanal
-  async updateWeeklyBlock(req: Request, res: Response) {
+  async updateWeeklyBlock(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const validatedData = updateWeeklyBlockSchema.parse(req.body);
@@ -103,15 +92,12 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao atualizar bloqueio semanal:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Deletar bloqueio semanal
-  async deleteWeeklyBlock(req: Request, res: Response) {
+  async deleteWeeklyBlock(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
 
@@ -123,15 +109,12 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao deletar bloqueio semanal:', error);
-      res.status(400).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 
   // Obter estatísticas dos bloqueios semanais
-  async getWeeklyBlockStats(_req: Request, res: Response) {
+  async getWeeklyBlockStats(_req: Request, res: Response, next: NextFunction) {
     try {
       const stats = await weeklyBlockService.getWeeklyBlockStats();
 
@@ -141,10 +124,7 @@ export class WeeklyBlockController {
       });
     } catch (error) {
       logger.error('Erro ao buscar estatísticas dos bloqueios semanais:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor'
-      });
+      return next(error);
     }
   }
 }
