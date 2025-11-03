@@ -115,8 +115,20 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting
-app.use(rateLimiter);
+// Rate limiting (bypass para rotas críticas)
+const rateLimitBypassPrefixes = [
+  '/health',
+  '/api/health',
+  '/api/pwa', // manifest, service-worker, icon
+  '/api/csrf-token',
+  '/api/docs',
+];
+app.use((req, res, next) => {
+  if (rateLimitBypassPrefixes.some((p) => req.path.startsWith(p))) {
+    return next();
+  }
+  return rateLimiter(req, res, next);
+});
 
 // Parser de JSON
 app.use(express.json());
