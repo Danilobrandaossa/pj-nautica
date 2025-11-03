@@ -188,7 +188,14 @@ export default function BookingsPage() {
   const getDaysInMonth = () => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start, end });
+    const daysInMonth = eachDayOfInterval({ start, end });
+    // Preencher dias em branco antes do primeiro dia do mês para alinhar com o dia da semana correto (0=Domingo)
+    const leadingEmpty = Array(start.getDay()).fill(null);
+    // Garantir múltiplos de 7 com espaços em branco no final
+    const totalCells = leadingEmpty.length + daysInMonth.length;
+    const trailingEmptyCount = (7 - (totalCells % 7)) % 7;
+    const trailingEmpty = Array(trailingEmptyCount).fill(null);
+    return [...leadingEmpty, ...daysInMonth, ...trailingEmpty];
   };
 
   const isDateBooked = (date: Date) => {
@@ -402,6 +409,11 @@ export default function BookingsPage() {
                 ))}
                 
                 {days.map((day, idx) => {
+                  if (!day) {
+                    return (
+                      <div key={idx} className="h-20 sm:h-24 bg-transparent border border-transparent" />
+                    );
+                  }
                   const isBooked = isDateBooked(day);
                   const blockedInfo = getBlockedDateInfo(day);
                   const weeklyBlockInfo = getWeeklyBlockInfo(day);
